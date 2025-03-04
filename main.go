@@ -3,11 +3,13 @@ package main
 import (
 	"net/http"
 
+	"example.com/rest-api-go/db"
 	"example.com/rest-api-go/models"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	db.InitDB()
 	server := gin.Default()
 
 	server.GET("/ping", ping)
@@ -22,7 +24,13 @@ func ping(context *gin.Context) {
 }
 
 func getEvents(context *gin.Context) {
-	events := models.GetAllEvents()
+	events, err := models.GetAllEvents()
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": err})
+		return
+	}
+
 	context.JSON(http.StatusOK, events)
 }
 
@@ -35,10 +43,15 @@ func createEvent(context *gin.Context) {
 		return
 	}
 
-	event.ID = 1
+	// event.ID = 1
 	event.UserID = 1
 
-	event.Save()
+	err = event.Save()
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": err})
+		return
+	}
 
 	context.JSON(http.StatusOK, gin.H{"message": "Event created!", "event": event})
 }
